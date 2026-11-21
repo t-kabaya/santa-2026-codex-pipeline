@@ -46,6 +46,8 @@ def download_notebook(notebook, directory):
 
 
 def download(name, ref, directory, notebooks):
+    if "local" in ref:
+        return ref["local"].read_bytes()
     if "notebook" in ref:
         notebook = ref["notebook"]
         if notebook not in notebooks:
@@ -67,6 +69,9 @@ def download(name, ref, directory, notebooks):
 
 def sync():
     refs = load_references()
+    hansen = ROOT / "out" / "hansen" / "submission.csv"
+    if hansen.is_file():
+        refs["hansen:portfolio"] = {"local": hansen}
     puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
     destination = OUTPUT / "submission.csv"
     baseline = destination if destination.exists() else UPSTREAM / "out/public.csv"
