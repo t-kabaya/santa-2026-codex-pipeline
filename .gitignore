@@ -1,0 +1,10 @@
+# Upstream clone and local reproduction artifacts
+/Hansen-Santa_2026/
+/data/
+/out/
+
+# Local Python and macOS files
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
