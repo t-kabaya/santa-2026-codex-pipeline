@@ -7,10 +7,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+from urllib.parse import urlsplit
 from zipfile import BadZipFile, ZipFile
+
+from discover_santa_discussion import OUTPUT as DISCUSSION_REPORT
 
 from sync_santa_answers import (
     DISCOVERED, OUTPUT, UPSTREAM, download_archive, download_notebook, load_puzzles,
@@ -39,6 +43,22 @@ def search_notebooks(limit):
         timeout=60,
     )
     return list(dict.fromkeys(item["ref"] for item in json.loads(response)))
+
+
+def discussion_references():
+    datasets, notebooks = [], []
+    if not DISCUSSION_REPORT.exists():
+        return datasets, notebooks
+    for topic in json.loads(DISCUSSION_REPORT.read_text(encoding="utf-8")):
+        for link in topic.get("links", []):
+            parsed = urlsplit(link["url"])
+            if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"www.kaggle.com", "kaggle.com"}:
+                continue
+            match = re.match(r"^/(datasets|code)/([\w-]+/[\w-]+)(?:/|$)", parsed.path, re.ASCII)
+            if match:
+                section, ref = match.groups()
+                (datasets if section == "datasets" else notebooks).append(ref.lower())
+    return datasets, notebooks
 
 
 def validate_csv(raw, puzzles, scratch):
@@ -103,8 +123,12 @@ def inspect_dataset(dataset, puzzles, scratch):
 
 def discover(limit):
     known = {ref["dataset"] for ref in load_references().values() if "dataset" in ref}
-    datasets = [dataset for dataset in search_datasets() if dataset not in known]
-    notebooks = search_notebooks(limit)
+    discussion_datasets, discussion_notebooks = discussion_references()
+    datasets = [
+        dataset for dataset in dict.fromkeys(discussion_datasets + search_datasets())
+        if dataset not in known
+    ]
+    notebooks = list(dict.fromkeys(discussion_notebooks + search_notebooks(limit)))
     puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
     discovered = json.loads(DISCOVERED.read_text()) if DISCOVERED.exists() else {}
     added = failures = 0
