@@ -1,4 +1,4 @@
-"""Refresh the local Santa submission from the configured Kaggle datasets."""
+"""Refresh the local Santa submission from Kaggle datasets and notebook outputs."""
 
 import fcntl
 import hashlib
@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parent
@@ -37,7 +37,25 @@ def download_archive(name, dataset):
     return cache / (dataset.split("/")[-1] + ".zip")
 
 
-def download(name, ref):
+def download_notebook(notebook, directory):
+    subprocess.run(
+        ["kaggle", "kernels", "output", notebook, "-p", str(directory),
+         "--file-pattern", r".*\.[cC][sS][vV]$", "-q"],
+        check=True, timeout=300,
+    )
+
+
+def download(name, ref, directory, notebooks):
+    if "notebook" in ref:
+        notebook = ref["notebook"]
+        if notebook not in notebooks:
+            path = Path(mkdtemp(prefix="notebook-", dir=directory))
+            download_notebook(notebook, path)
+            notebooks[notebook] = path
+        try:
+            return (notebooks[notebook] / ref["file"]).read_bytes()
+        except FileNotFoundError:
+            return None
     archive_path = download_archive(name.replace("/", "--"), ref["dataset"])
     try:
         with ZipFile(archive_path) as archive:
@@ -59,9 +77,13 @@ def sync():
     failures = 0
     with TemporaryDirectory(dir=OUTPUT) as directory:
         scratch = Path(directory) / "candidate.csv"
+        notebooks = {}
         for name, ref in refs.items():
             try:
-                raw = download(name, ref)
+                raw = download(name, ref, directory, notebooks)
+                if raw is None:
+                    print(f"{name}: absent from the latest notebook output", flush=True)
+                    continue
                 digest = hashlib.sha256(raw).hexdigest()
                 if digest == hashes.get(name):
                     continue

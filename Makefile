@@ -8,13 +8,13 @@ SUBMIT_MESSAGE ?= Verified Santa 2026 public answer merge
 .PHONY: help discover sync verify submit pipeline
 
 help:
-	@echo 'make discover  Search Kaggle and register verified answer CSVs'
+	@echo 'make discover  Register verified CSVs from Kaggle Datasets and Code'
 	@echo 'make sync      Update the local merged submission'
 	@echo 'make verify    Validate the merged CSV and print its instruction count'
 	@echo 'make submit    Verify and submit the merged CSV to Kaggle'
 	@echo 'make pipeline  Run discover, sync, verify, and submit in order'
 
-# 新しい公開データセットを探し、検証に通った解答 CSV を取得元リストに追加する。
+# 公開データセットとノートブックの出力を探し、検証済みの解答 CSV を登録する。
 discover:
 	"$(PYTHON)" discover_santa_answers.py --limit "$(DISCOVER_LIMIT)"
 

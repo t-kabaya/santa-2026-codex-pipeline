@@ -1,4 +1,4 @@
-"""Find public Kaggle datasets with a complete, valid Santa 2026 answer CSV."""
+"""Find complete, valid Santa 2026 answer CSVs on Kaggle."""
 
 import argparse
 import csv
@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 from zipfile import BadZipFile, ZipFile
 
 from sync_santa_answers import (
-    DISCOVERED, OUTPUT, UPSTREAM, download_archive, load_puzzles,
+    DISCOVERED, OUTPUT, UPSTREAM, download_archive, download_notebook, load_puzzles,
     load_programs, load_references, score,
 )
 
@@ -31,6 +31,51 @@ def search_datasets():
     return sorted(results, key=results.get, reverse=True)
 
 
+def search_notebooks(limit):
+    response = subprocess.check_output(
+        ["kaggle", "kernels", "list", "--competition", "santa-2026",
+         "--sort-by", "scoreAscending", "--page-size", str(limit),
+         "--format", "json"],
+        timeout=60,
+    )
+    return list(dict.fromkeys(item["ref"] for item in json.loads(response)))
+
+
+def validate_csv(raw, puzzles, scratch):
+    header = raw[:4096].splitlines()[0:1]
+    if not header:
+        return None
+    fields = next(csv.reader([header[0].decode("utf-8-sig", errors="replace")]))
+    if not {"id", "program"}.issubset(fields):
+        return None
+    scratch.write_bytes(raw)
+    try:
+        return score(puzzles, load_programs(scratch, reference=True))
+    except (ValueError, TypeError, KeyError, csv.Error):
+        return None
+
+
+def inspect_notebook(notebook, puzzles, scratch):
+    with TemporaryDirectory(dir=scratch.parent) as directory:
+        path = Path(directory)
+        download_notebook(notebook, path)
+        candidates = {}
+        for file in sorted(path.rglob("*")):
+            if not file.is_file() or file.suffix.lower() != ".csv":
+                continue
+            raw = file.read_bytes()
+            total = validate_csv(raw, puzzles, scratch)
+            if total is not None:
+                filename = file.relative_to(path).as_posix()
+                candidates[f"notebook:{notebook}:{filename}"] = {
+                    "notebook": notebook,
+                    "file": filename,
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                    "instructions": total,
+                }
+        return candidates
+
+
 def inspect_dataset(dataset, puzzles, scratch):
     archive_path = download_archive(dataset.replace("/", "--"), dataset)
     best = None
@@ -39,15 +84,9 @@ def inspect_dataset(dataset, puzzles, scratch):
             for entry in archive.infolist():
                 if not entry.filename.lower().endswith(".csv"):
                     continue
-                with archive.open(entry) as stream:
-                    header = stream.readline(4096).decode("utf-8-sig", errors="replace")
-                if not {"id", "program"}.issubset(next(csv.reader([header]), [])):
-                    continue
                 raw = archive.read(entry)
-                scratch.write_bytes(raw)
-                try:
-                    total = score(puzzles, load_programs(scratch, reference=True))
-                except (ValueError, TypeError, KeyError, csv.Error):
+                total = validate_csv(raw, puzzles, scratch)
+                if total is None:
                     continue
                 if best is None or total < best["instructions"]:
                     best = {
@@ -63,8 +102,9 @@ def inspect_dataset(dataset, puzzles, scratch):
 
 
 def discover(limit):
-    known = {ref["dataset"] for ref in load_references().values()}
+    known = {ref["dataset"] for ref in load_references().values() if "dataset" in ref}
     datasets = [dataset for dataset in search_datasets() if dataset not in known]
+    notebooks = search_notebooks(limit)
     puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
     discovered = json.loads(DISCOVERED.read_text()) if DISCOVERED.exists() else {}
     added = failures = 0
@@ -83,7 +123,21 @@ def discover(limit):
             discovered[dataset] = candidate
             added += 1
             print(f"{dataset}: {candidate['file']} ({candidate['instructions']} instructions)", flush=True)
-        if added:
+        changed = bool(added)
+        for notebook in notebooks[:limit]:
+            try:
+                candidates = inspect_notebook(notebook, puzzles, scratch)
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
+                print(f"{notebook}: {error}", file=sys.stderr, flush=True)
+                failures += 1
+                continue
+            for name, candidate in candidates.items():
+                if discovered.get(name) != candidate:
+                    added += name not in discovered
+                    discovered[name] = candidate
+                    changed = True
+                    print(f"{name}: {candidate['instructions']} instructions", flush=True)
+        if changed:
             scratch.write_text(json.dumps(discovered, indent=2) + "\n")
             os.replace(scratch, DISCOVERED)
     print(f"{added} references added to {DISCOVERED}", flush=True)
@@ -92,7 +146,7 @@ def discover(limit):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limit", type=int, default=30, help="Maximum new datasets to inspect")
+    parser.add_argument("--limit", type=int, default=30, help="Maximum datasets and notebooks to inspect, per source type")
     args = parser.parse_args()
     if args.limit < 1:
         parser.error("--limit must be positive")
