@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 from tempfile import TemporaryDirectory
 from urllib.parse import urlsplit
 from zipfile import BadZipFile, ZipFile
@@ -22,27 +23,38 @@ from sync_santa_answers import (
 )
 
 
+def search_results(command):
+    for delay in (15, 30, 0):
+        result = subprocess.run(command, capture_output=True, text=True, timeout=60)
+        if result.returncode and delay and "429 Client Error" in result.stderr + result.stdout:
+            print(f"Kaggle search rate limited; retrying in {delay}s.", file=sys.stderr, flush=True)
+            time.sleep(delay)
+            continue
+        if result.stderr:
+            print(result.stderr, file=sys.stderr, end="")
+        result.check_returncode()
+        return json.JSONDecoder().raw_decode(result.stdout.lstrip())[0]
+
+
 def search_datasets():
     results = {}
     for phrase in ("Santa 2026", "Elf Calculator"):
-        response = subprocess.check_output(
+        response = search_results(
             ["kaggle", "datasets", "list", "-s", phrase,
              "--sort-by", "updated", "--format", "json"],
-            timeout=60,
         )
-        for item in json.loads(response):
+        for item in response:
             results[item["ref"]] = item["lastUpdated"]
     return sorted(results, key=results.get, reverse=True)
 
 
 def search_notebooks(limit, sort_by):
-    response = subprocess.check_output(
+    response = search_results(
         ["kaggle", "kernels", "list", "--competition", "santa-2026",
          "--sort-by", sort_by, "--page-size", str(limit),
          "--format", "json"],
-        timeout=60,
     )
-    return {item["ref"]: item.get("lastRunTime") for item in json.loads(response)}
+    return {item["ref"]: item.get("lastRunTime") for item in response}
 
 
 def discussion_references():
