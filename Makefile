@@ -6,7 +6,7 @@ PUZZLES := Hansen-Santa_2026/data/puzzles.csv
 SUBMIT_MESSAGE ?= Verified Santa 2026 public answer merge
 
 .DEFAULT_GOAL := help
-.PHONY: help discover discover-discussion restore-hansen restore-goodpjw sync verify submit pipeline
+.PHONY: help discover discover-discussion restore-hansen restore-goodpjw sync verify submit refresh pipeline
 
 help:
 	@echo 'make discover  Register verified CSVs from Kaggle Datasets and Code'
@@ -16,6 +16,7 @@ help:
 	@echo 'make sync      Update the local merged submission'
 	@echo 'make verify    Validate the merged CSV and print its instruction count'
 	@echo 'make submit    Verify and submit the merged CSV to Kaggle'
+	@echo 'make refresh   Discover, restore, merge, and verify the local CSV'
 	@echo 'make pipeline  Run discover, restore-hansen, restore-goodpjw, sync, verify, and submit in order'
 
 # 公開データセット、ノートブック、保存済みの Discussion 候補から検証済みの解答 CSV を登録する。
@@ -45,6 +46,15 @@ verify:
 # 検証に成功した合成 CSV を Kaggle に提出し、採点結果を待つ。
 submit: verify
 	kaggle competitions submit santa-2026 -f "$(SUBMISSION)" -m "$(SUBMIT_MESSAGE)" --wait
+
+# Discussion と公開解答を探索し、復元・合成結果を検証する。
+refresh:
+	$(MAKE) discover-discussion
+	$(MAKE) discover
+	$(MAKE) restore-hansen
+	$(MAKE) restore-goodpjw
+	$(MAKE) sync
+	$(MAKE) verify
 
 # 探索、Hansen 版の復元、GoodPJW の取得、同期、検証、提出を順に実行する。
 pipeline:
