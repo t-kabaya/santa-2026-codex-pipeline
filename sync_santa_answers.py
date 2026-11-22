@@ -72,6 +72,9 @@ def sync():
     hansen = ROOT / "out" / "hansen" / "submission.csv"
     if hansen.is_file():
         refs["hansen:portfolio"] = {"local": hansen}
+    goodpjw = ROOT / "out" / "goodpjw" / "submission.csv"
+    if goodpjw.is_file():
+        refs["goodpjw:portfolio"] = {"local": goodpjw}
     puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
     destination = OUTPUT / "submission.csv"
     baseline = destination if destination.exists() else UPSTREAM / "out/public.csv"

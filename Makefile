@@ -6,16 +6,17 @@ PUZZLES := Hansen-Santa_2026/data/puzzles.csv
 SUBMIT_MESSAGE ?= Verified Santa 2026 public answer merge
 
 .DEFAULT_GOAL := help
-.PHONY: help discover discover-discussion restore-hansen sync verify submit pipeline
+.PHONY: help discover discover-discussion restore-hansen restore-goodpjw sync verify submit pipeline
 
 help:
 	@echo 'make discover  Register verified CSVs from Kaggle Datasets and Code'
 	@echo 'make discover-discussion  List Santa 2026 discussion posts and candidate links'
 	@echo 'make restore-hansen  Restore and verify the pinned Hansen portfolio'
+	@echo 'make restore-goodpjw  Fetch and verify GoodPJW public notebook outputs'
 	@echo 'make sync      Update the local merged submission'
 	@echo 'make verify    Validate the merged CSV and print its instruction count'
 	@echo 'make submit    Verify and submit the merged CSV to Kaggle'
-	@echo 'make pipeline  Run discover, restore-hansen, sync, verify, and submit in order'
+	@echo 'make pipeline  Run discover, restore-hansen, restore-goodpjw, sync, verify, and submit in order'
 
 # 公開データセット、ノートブック、保存済みの Discussion 候補から検証済みの解答 CSV を登録する。
 discover:
@@ -29,6 +30,10 @@ discover-discussion:
 restore-hansen:
 	"$(PYTHON)" restore_hansen.py
 
+# GoodPJW の公開ノートブック出力を取得・検証し、問題ごとの最短解を保存する。
+restore-goodpjw:
+	"$(PYTHON)" restore_goodpjw.py $(if $(GOODPJW_NOTEBOOK),--notebook "$(GOODPJW_NOTEBOOK)")
+
 # 登録済みの取得元から最新版を取得・検証し、問題ごとの最短解でローカルの合成 CSV を更新する。
 sync:
 	"$(PYTHON)" sync_santa_answers.py
@@ -41,9 +46,10 @@ verify:
 submit: verify
 	kaggle competitions submit santa-2026 -f "$(SUBMISSION)" -m "$(SUBMIT_MESSAGE)" --wait
 
-# 探索、Hansen 版の復元、同期、検証、提出を順に実行する。
+# 探索、Hansen 版の復元、GoodPJW の取得、同期、検証、提出を順に実行する。
 pipeline:
 	$(MAKE) discover
 	$(MAKE) restore-hansen
+	$(MAKE) restore-goodpjw
 	$(MAKE) sync
 	$(MAKE) submit
