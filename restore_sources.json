@@ -1,0 +1,10 @@
+{
+  "hansen": {
+    "script": "restore_hansen.py"
+  },
+  "goodpjw": {
+    "notebook": "goodpjw2008/santa-2026-lns-cp-sat-recombine-lb-132-256",
+    "notebook_env": "GOODPJW_NOTEBOOK",
+    "files": ["submission.csv", "submission_live_merge.csv"]
+  }
+}

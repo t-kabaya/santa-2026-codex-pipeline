@@ -99,7 +99,7 @@ def discover(limit):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limit", type=int, default=10, help="Maximum recent topics to inspect")
+    parser.add_argument("--limit", type=int, default=20, help="Maximum recent topics to inspect")
     args = parser.parse_args()
     if args.limit < 1:
         parser.error("--limit must be positive")

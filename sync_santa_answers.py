@@ -18,6 +18,14 @@ DISCOVERED = OUTPUT / "discovered-references.json"
 from machine import load_programs, load_puzzles, save_verified, score
 
 
+def load_restore_sources():
+    return json.loads((ROOT / "restore_sources.json").read_text(encoding="utf-8"))
+
+
+def restore_output(name):
+    return ROOT / "out" / name / "submission.csv"
+
+
 def load_references():
     refs = json.loads((ROOT / "references.json").read_text())
     if DISCOVERED.exists():
@@ -67,12 +75,10 @@ def download(name, ref, directory, notebooks):
 
 def sync():
     refs = load_references()
-    hansen = ROOT / "out" / "hansen" / "submission.csv"
-    if hansen.is_file():
-        refs["hansen:portfolio"] = {"local": hansen}
-    goodpjw = ROOT / "out" / "goodpjw" / "submission.csv"
-    if goodpjw.is_file():
-        refs["goodpjw:portfolio"] = {"local": goodpjw}
+    for name in load_restore_sources():
+        path = restore_output(name)
+        if path.is_file():
+            refs[f"{name}:portfolio"] = {"local": path}
     puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     destination = OUTPUT / "submission.csv"
     baseline = destination if destination.exists() else ROOT / "out/public.csv"
