@@ -2,7 +2,7 @@ PYTHON ?= $(if $(wildcard /opt/homebrew/bin/python3),/opt/homebrew/bin/python3,p
 DISCOVER_LIMIT ?= 30
 DISCUSSION_LIMIT ?= 10
 SUBMISSION := out/santa-sync/submission.csv
-PUZZLES := Hansen-Santa_2026/data/puzzles.csv
+PUZZLES := data/puzzles.csv
 SUBMIT_MESSAGE ?= Verified Santa 2026 public answer merge
 
 .DEFAULT_GOAL := help
@@ -41,7 +41,7 @@ sync:
 
 # 合成 CSV の全問題を再検証し、総命令数を表示する。
 verify:
-	"$(PYTHON)" Hansen-Santa_2026/run.py verify "$(PUZZLES)" "$(SUBMISSION)"
+	"$(PYTHON)" run.py verify "$(PUZZLES)" "$(SUBMISSION)"
 
 # 検証に成功した合成 CSV を Kaggle に提出し、採点結果を待つ。
 submit: verify

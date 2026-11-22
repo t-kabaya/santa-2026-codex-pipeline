@@ -41,13 +41,9 @@ jobs:
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
-          git init Hansen-Santa_2026
-          git -C Hansen-Santa_2026 fetch --depth 1 https://github.com/Hansen0223/Santa_2026.git 03d9682c11b2a4867a1b62cf98ad745fd5951980
-          git -C Hansen-Santa_2026 switch --detach FETCH_HEAD
           kaggle competitions download santa-2026 -p out/competition
-          unzip -j out/competition/santa-2026.zip puzzles.csv sample_submission.csv -d Hansen-Santa_2026/data
-          mkdir -p Hansen-Santa_2026/out
-          cp Hansen-Santa_2026/data/sample_submission.csv Hansen-Santa_2026/out/public.csv
+          unzip -j out/competition/santa-2026.zip puzzles.csv sample_submission.csv -d data
+          cp data/sample_submission.csv out/public.csv
           make refresh
       - name: Save verified portfolio for the next run
         uses: actions/upload-artifact@v4

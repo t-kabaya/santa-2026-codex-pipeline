@@ -1,0 +1,67 @@
+{
+  "dictionary": 223797,
+  "dict64": 213254,
+  "mip-own": 218370,
+  "multi-own": 208605,
+  "own-graph": 217628,
+  "standalone": 207257,
+  "public": 138998,
+  "graph": 138952,
+  "cut": 138945,
+  "deep": 138939,
+  "recombined": 138931,
+  "fusion": 138925,
+  "submission": 138921,
+  "improved_puzzles": 61,
+  "largest_improvements": [
+    [
+      "scored_0693",
+      8
+    ],
+    [
+      "scored_0769",
+      4
+    ],
+    [
+      "scored_0498",
+      2
+    ],
+    [
+      "scored_0604",
+      2
+    ],
+    [
+      "scored_0714",
+      2
+    ],
+    [
+      "scored_0789",
+      2
+    ],
+    [
+      "scored_0794",
+      2
+    ],
+    [
+      "scored_0919",
+      2
+    ]
+  ],
+  "small_scored_proven_optimal": 16,
+  "scored_puzzles": 1000,
+  "replay_submission": {
+    "programs": 1000,
+    "steps": 138921,
+    "sha256": "e9049cef5493457a4a87478e98547c2a7886237c3403eca90407b1cb1df2a2b5"
+  },
+  "replay_standalone": {
+    "programs": 1000,
+    "steps": 207257,
+    "sha256": "3f89cd496b5c0c6fd8866c0fd5de75a12583bdc6424c9805d817df107b856696"
+  },
+  "replay_standalone-practice": {
+    "programs": 200,
+    "steps": 42948,
+    "sha256": "3f34d2338e1cdacef2167c1ec91ab4f58c473f61c5f92880778dd492545180e7"
+  }
+}

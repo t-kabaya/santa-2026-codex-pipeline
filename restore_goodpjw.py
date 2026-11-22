@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from sync_santa_answers import (
-    ROOT, UPSTREAM, download_notebook, load_programs, load_puzzles, save_verified, score,
+    ROOT, download_notebook, load_programs, load_puzzles, save_verified, score,
 )
 
 NOTEBOOK = "goodpjw2008/santa-2026-lns-cp-sat-recombine-lb-132-256"
@@ -14,7 +14,7 @@ FILES = ("submission.csv", "submission_live_merge.csv")
 
 
 def restore(notebook):
-    puzzles = load_puzzles(UPSTREAM / "data" / "puzzles.csv")
+    puzzles = load_puzzles(ROOT / "data" / "puzzles.csv")
     best = {}
     with TemporaryDirectory() as directory:
         download_notebook(notebook, Path(directory))

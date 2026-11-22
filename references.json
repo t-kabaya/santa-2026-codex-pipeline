@@ -1,0 +1,38 @@
+{
+  "konbu": {
+    "dataset": "konbu17/santa-2026-elf-calculator-programs",
+    "version": 11,
+    "file": "submission.csv",
+    "sha256": "1147067ff0ea9545bdd0625b5de216320b762d6f3f6413a183b8b8a63035973f"
+  },
+  "exp": {
+    "dataset": "asteriospanoras/santa-2026-elf-programs-and-experiments",
+    "version": 6,
+    "file": "best_programs.csv",
+    "sha256": "5b4f8dcd7dbe9c19e7be7081a20f346427f0253b97b3eaf7bf8a089e199faf91"
+  },
+  "portfolio": {
+    "dataset": "skagumire/santa-2026-verified-portfolio-programs",
+    "version": 1,
+    "file": "best_programs.csv",
+    "sha256": "820ee454f29383c2147c214d21a3ef48f392545ddfca53e0e9e3a13ab23f3dd9"
+  },
+  "xray": {
+    "dataset": "lucifer19/elf-calculator-x-ray-programs",
+    "version": 1,
+    "file": "xray_anchor_v2.csv",
+    "sha256": "dec43a70903bd17c7fd0fd5118bbf9f15194fcf9735ee17c3abb59589a137d73"
+  },
+  "peephole": {
+    "dataset": "hanifnoerrofiq/santa-2026-elf-calculator-peephole-programs",
+    "version": 13,
+    "file": "submission.csv",
+    "sha256": "1e1d96a1ba23cdde29020b8c751b42b4eab9e78688a58b8b13c2300d65bdcd4e"
+  },
+  "elias": {
+    "dataset": "b05204047elias/elf-calculator-verified-best-programs",
+    "version": 3,
+    "file": "submission.csv",
+    "sha256": "37a03bbd0b951d798b60fc6b110252500017a159d9c410260cd33ba177287999"
+  }
+}

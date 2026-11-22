@@ -1,7 +1,8 @@
-# Upstream clone and local reproduction artifacts
-/Hansen-Santa_2026/
+# Local inputs, reproduction artifacts and compiled solvers
 /data/
 /out/
+/graph_search
+/backward
 
 # Local Python and macOS files
 __pycache__/

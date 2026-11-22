@@ -12,16 +12,14 @@ from tempfile import TemporaryDirectory, mkdtemp
 from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parent
-UPSTREAM = ROOT / "Hansen-Santa_2026"
 OUTPUT = ROOT / "out" / "santa-sync"
 DISCOVERED = OUTPUT / "discovered-references.json"
-sys.path.insert(0, str(UPSTREAM))
 
 from machine import load_programs, load_puzzles, save_verified, score
 
 
 def load_references():
-    refs = json.loads((UPSTREAM / "references.json").read_text())
+    refs = json.loads((ROOT / "references.json").read_text())
     if DISCOVERED.exists():
         refs.update(json.loads(DISCOVERED.read_text()))
     return refs
@@ -75,9 +73,9 @@ def sync():
     goodpjw = ROOT / "out" / "goodpjw" / "submission.csv"
     if goodpjw.is_file():
         refs["goodpjw:portfolio"] = {"local": goodpjw}
-    puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
+    puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     destination = OUTPUT / "submission.csv"
-    baseline = destination if destination.exists() else UPSTREAM / "out/public.csv"
+    baseline = destination if destination.exists() else ROOT / "out/public.csv"
     best = load_programs(baseline)
     original_score = score(puzzles, best)
     state = OUTPUT / "hashes.json"

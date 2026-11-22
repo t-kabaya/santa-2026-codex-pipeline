@@ -17,7 +17,7 @@ from zipfile import BadZipFile, ZipFile
 from discover_santa_discussion import OUTPUT as DISCUSSION_REPORT
 
 from sync_santa_answers import (
-    DISCOVERED, OUTPUT, UPSTREAM, download_archive, download_notebook, load_puzzles,
+    DISCOVERED, OUTPUT, ROOT, download_archive, download_notebook, load_puzzles,
     load_programs, load_references, score,
 )
 
@@ -129,7 +129,7 @@ def discover(limit):
         if dataset not in known
     ]
     notebooks = list(dict.fromkeys(discussion_notebooks + search_notebooks(limit)))
-    puzzles = load_puzzles(UPSTREAM / "data/puzzles.csv")
+    puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     discovered = json.loads(DISCOVERED.read_text()) if DISCOVERED.exists() else {}
     added = failures = 0
     with TemporaryDirectory(dir=OUTPUT) as directory:
