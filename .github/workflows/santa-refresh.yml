@@ -43,7 +43,6 @@ jobs:
         run: |
           kaggle competitions download santa-2026 -p out/competition
           unzip -j out/competition/santa-2026.zip puzzles.csv sample_submission.csv -d data
-          cp data/sample_submission.csv out/public.csv
           make refresh
       - name: Save verified portfolio for the next run
         uses: actions/upload-artifact@v4

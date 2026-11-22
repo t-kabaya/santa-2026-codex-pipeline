@@ -76,6 +76,8 @@ def sync():
     puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     destination = OUTPUT / "submission.csv"
     baseline = destination if destination.exists() else ROOT / "out/public.csv"
+    if not baseline.exists():
+        baseline = ROOT / "data/sample_submission.csv"
     best = load_programs(baseline)
     original_score = score(puzzles, best)
     state = OUTPUT / "hashes.json"

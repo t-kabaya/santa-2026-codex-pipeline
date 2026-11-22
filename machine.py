@@ -17,7 +17,6 @@ class Puzzle:
     targets: tuple
     limit: int
     slots: int
-    family: str = "unlabelled"
 
 
 def load_puzzles(path):
@@ -31,7 +30,6 @@ def load_puzzles(path):
                 tuple(json.loads(row["targets"])),
                 int(row["value_limit"]),
                 int(row["registers"]),
-                row.get("family", "unlabelled"),
             )
             if p.id in seen or not p.id or not 1 <= len(p.seeds) <= p.slots <= 48:
                 raise ValueError(f"Invalid or duplicate puzzle: {p.id}")

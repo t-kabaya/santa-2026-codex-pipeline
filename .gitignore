@@ -1,8 +1,6 @@
-# Local inputs, reproduction artifacts and compiled solvers
+# Local inputs and generated outputs
 /data/
 /out/
-/graph_search
-/backward
 
 # Local Python and macOS files
 __pycache__/
