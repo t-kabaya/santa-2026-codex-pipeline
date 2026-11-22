@@ -36,6 +36,7 @@ jobs:
           previous=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow santa-refresh.yml --branch "$GITHUB_REF_NAME" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
           if [ -n "$previous" ]; then
             gh run download "$previous" --repo "$GITHUB_REPOSITORY" --name santa-state --dir out/santa-sync
+            gh run download "$previous" --repo "$GITHUB_REPOSITORY" --name santa-discussion --dir out/santa-discussion
           fi
       - name: Discover and validate public candidates
         env:

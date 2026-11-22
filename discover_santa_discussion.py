@@ -16,10 +16,21 @@ OUTPUT = Path(__file__).resolve().parent / "out" / "santa-discussion" / "candida
 URL = re.compile(r'https?://[^\s<>"\']+')
 
 
+class RateLimited(Exception):
+    pass
+
+
 def kaggle(*args):
-    return subprocess.check_output(
-        ["kaggle", "competitions", "topics", *args], text=True, timeout=120
+    result = subprocess.run(
+        ["kaggle", "competitions", "topics", *args],
+        text=True, capture_output=True, timeout=120,
     )
+    if result.returncode and "429 Client Error" in result.stderr + result.stdout:
+        raise RateLimited("Kaggle Discussion rate limit reached; using saved links where available")
+    if result.stderr:
+        print(result.stderr, file=sys.stderr, end="")
+    result.check_returncode()
+    return result.stdout
 
 
 def cli_json(output):
@@ -73,14 +84,26 @@ def inspect_topic(topic):
 
 
 def discover(limit):
-    topics = cli_json(kaggle("list", COMPETITION, "--sort-by", "new", "--format", "json"))
+    saved = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
+    cached = {entry["id"]: entry for entry in saved}
+    try:
+        topics = cli_json(kaggle("list", COMPETITION, "--sort-by", "new", "--format", "json"))
+        limited = False
+    except RateLimited as error:
+        print(error, file=sys.stderr)
+        topics, limited = saved, True
     recent = sorted(topics, key=lambda topic: topic.get("postDate") or "", reverse=True)
     report = []
     failures = 0
     for topic in recent[:limit]:
-        entry = {**topic, "url": f"{DISCUSSION}/{topic['id']}", "links": []}
+        previous = cached.get(topic["id"], {})
+        entry = {**topic, "url": f"{DISCUSSION}/{topic['id']}", "links": previous.get("links", [])}
         try:
-            entry["links"] = inspect_topic(topic)
+            if not limited:
+                entry["links"] = inspect_topic(topic)
+        except RateLimited as error:
+            print(error, file=sys.stderr)
+            limited = True
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             entry["error"] = str(error)
             failures += 1
