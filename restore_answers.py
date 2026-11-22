@@ -8,7 +8,7 @@ import sys
 from tempfile import TemporaryDirectory
 
 from sync_santa_answers import (
-    ROOT, download_notebook, load_programs, load_puzzles, load_restore_sources,
+    ROOT, KaggleRateLimited, download_notebook, load_programs, load_puzzles, load_restore_sources,
     restore_output, save_verified, score,
 )
 
@@ -45,4 +45,7 @@ if __name__ == "__main__":
             subprocess.run([sys.executable, str(ROOT / source["script"])], check=True, cwd=ROOT)
         else:
             notebook = os.environ.get(source.get("notebook_env", "")) or source["notebook"]
-            restore_notebook(notebook, source["files"], restore_output(name))
+            try:
+                restore_notebook(notebook, source["files"], restore_output(name))
+            except KaggleRateLimited as error:
+                print(f"{name}: {error}; keeping any previously verified candidate.", file=sys.stderr)

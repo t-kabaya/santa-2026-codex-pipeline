@@ -18,7 +18,7 @@ from zipfile import BadZipFile, ZipFile
 from discover_santa_discussion import OUTPUT as DISCUSSION_REPORT
 
 from sync_santa_answers import (
-    DISCOVERED, OUTPUT, ROOT, download_archive, download_notebook, load_puzzles,
+    DISCOVERED, OUTPUT, ROOT, KaggleRateLimited, download_archive, download_notebook, load_puzzles,
     load_programs, load_references, score,
 )
 
@@ -148,11 +148,16 @@ def discover(limit):
     puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     discovered = json.loads(DISCOVERED.read_text()) if DISCOVERED.exists() else {}
     added = failures = 0
+    limited = False
     with TemporaryDirectory(dir=OUTPUT) as directory:
         scratch = Path(directory) / "candidate.csv"
         for dataset in datasets[:limit]:
             try:
                 candidate = inspect_dataset(dataset, puzzles, scratch)
+            except KaggleRateLimited as error:
+                print(f"{dataset}: {error}; using verified discovery results so far.", file=sys.stderr)
+                limited = True
+                break
             except (OSError, ValueError, BadZipFile, subprocess.SubprocessError) as error:
                 print(f"{dataset}: {error}", file=sys.stderr, flush=True)
                 failures += 1
@@ -165,8 +170,13 @@ def discover(limit):
             print(f"{dataset}: {candidate['file']} ({candidate['instructions']} instructions)", flush=True)
         changed = bool(added)
         for notebook in notebooks[:limit]:
+            if limited:
+                break
             try:
                 candidates = inspect_notebook(notebook, puzzles, scratch)
+            except KaggleRateLimited as error:
+                print(f"{notebook}: {error}; using verified discovery results so far.", file=sys.stderr)
+                break
             except (OSError, ValueError, subprocess.SubprocessError) as error:
                 print(f"{notebook}: {error}", file=sys.stderr, flush=True)
                 failures += 1

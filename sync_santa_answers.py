@@ -18,6 +18,21 @@ DISCOVERED = OUTPUT / "discovered-references.json"
 from machine import load_programs, load_puzzles, save_verified, score
 
 
+class KaggleRateLimited(Exception):
+    pass
+
+
+def kaggle_download(*args):
+    result = subprocess.run(["kaggle", *args], capture_output=True, text=True, timeout=300)
+    if result.returncode and "429 Client Error" in result.stderr + result.stdout:
+        raise KaggleRateLimited("Kaggle download rate limit reached")
+    if result.stdout:
+        print(result.stdout, end="", flush=True)
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr, flush=True)
+    result.check_returncode()
+
+
 def load_restore_sources():
     return json.loads((ROOT / "restore_sources.json").read_text(encoding="utf-8"))
 
@@ -36,19 +51,13 @@ def load_references():
 def download_archive(name, dataset):
     cache = OUTPUT / "downloads" / name
     cache.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        ["kaggle", "datasets", "download", dataset, "-p", str(cache), "-q"],
-        check=True, timeout=300,
-    )
+    kaggle_download("datasets", "download", dataset, "-p", str(cache), "-q")
     return cache / (dataset.split("/")[-1] + ".zip")
 
 
 def download_notebook(notebook, directory):
-    subprocess.run(
-        ["kaggle", "kernels", "output", notebook, "-p", str(directory),
-         "--file-pattern", r".*\.[cC][sS][vV]$", "-q"],
-        check=True, timeout=300,
-    )
+    kaggle_download("kernels", "output", notebook, "-p", str(directory),
+                    "--file-pattern", r".*\.[cC][sS][vV]$", "-q")
 
 
 def download(name, ref, directory, notebooks):
@@ -89,10 +98,13 @@ def sync():
     state = OUTPUT / "hashes.json"
     hashes = json.loads(state.read_text()) if destination.exists() and state.exists() else {}
     failures = 0
+    limited = False
     with TemporaryDirectory(dir=OUTPUT) as directory:
         scratch = Path(directory) / "candidate.csv"
         notebooks = {}
         for name, ref in refs.items():
+            if limited and "local" not in ref:
+                continue
             try:
                 raw = download(name, ref, directory, notebooks)
                 if raw is None:
@@ -111,6 +123,9 @@ def sync():
                         improved += 1
                 hashes[name] = digest
                 print(f"{name}: verified, {improved} improvements", flush=True)
+            except KaggleRateLimited:
+                print(f"{name}: Kaggle rate limit reached; keeping the verified portfolio and checking local candidates.", file=sys.stderr, flush=True)
+                limited = True
             except (OSError, ValueError, TypeError, KeyError, csv.Error, BadZipFile, subprocess.SubprocessError) as error:
                 failures += 1
                 print(f"{name}: {error}", file=sys.stderr, flush=True)
