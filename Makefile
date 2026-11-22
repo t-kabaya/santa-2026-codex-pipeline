@@ -17,7 +17,7 @@ help:
 	@echo 'make verify    Validate the merged CSV and print its instruction count'
 	@echo 'make submit    Verify and submit the merged CSV to Kaggle'
 	@echo 'make refresh   Discover, restore, merge, and verify the local CSV'
-	@echo 'make pipeline  Run discover, restore-hansen, restore-goodpjw, sync, verify, and submit in order'
+	@echo 'make pipeline  Refresh the local portfolio and submit it to Kaggle'
 
 # 公開データセット、ノートブック、保存済みの Discussion 候補から検証済みの解答 CSV を登録する。
 discover:
@@ -56,10 +56,6 @@ refresh:
 	$(MAKE) sync
 	$(MAKE) verify
 
-# 探索、Hansen 版の復元、GoodPJW の取得、同期、検証、提出を順に実行する。
-pipeline:
-	$(MAKE) discover
-	$(MAKE) restore-hansen
-	$(MAKE) restore-goodpjw
-	$(MAKE) sync
+# 公開解答の探索から Kaggle への提出まで順に実行する。
+pipeline: refresh
 	$(MAKE) submit

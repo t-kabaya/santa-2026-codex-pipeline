@@ -35,14 +35,14 @@ def search_datasets():
     return sorted(results, key=results.get, reverse=True)
 
 
-def search_notebooks(limit):
+def search_notebooks(limit, sort_by):
     response = subprocess.check_output(
         ["kaggle", "kernels", "list", "--competition", "santa-2026",
-         "--sort-by", "scoreAscending", "--page-size", str(limit),
+         "--sort-by", sort_by, "--page-size", str(limit),
          "--format", "json"],
         timeout=60,
     )
-    return list(dict.fromkeys(item["ref"] for item in json.loads(response)))
+    return {item["ref"]: item.get("lastRunTime") for item in json.loads(response)}
 
 
 def discussion_references():
@@ -128,7 +128,11 @@ def discover(limit):
         dataset for dataset in dict.fromkeys(discussion_datasets + search_datasets())
         if dataset not in known
     ]
-    notebooks = list(dict.fromkeys(discussion_notebooks + search_notebooks(limit)))
+    recent = search_notebooks(limit, "dateRun")
+    top = search_notebooks(limit, "scoreAscending")
+    ordered = [ref for pair in zip(recent, top) for ref in pair]
+    notebooks = list(dict.fromkeys(discussion_notebooks + ordered + list(recent) + list(top)))
+    notebook_dates = top | recent
     puzzles = load_puzzles(ROOT / "data/puzzles.csv")
     discovered = json.loads(DISCOVERED.read_text()) if DISCOVERED.exists() else {}
     added = failures = 0
@@ -156,6 +160,8 @@ def discover(limit):
                 failures += 1
                 continue
             for name, candidate in candidates.items():
+                if notebook_dates.get(notebook):
+                    candidate["last_run_at"] = notebook_dates[notebook]
                 if discovered.get(name) != candidate:
                     added += name not in discovered
                     discovered[name] = candidate

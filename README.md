@@ -13,7 +13,7 @@ Python 3.11 以降、Kaggle CLI、Git、curl が必要です。Kaggle で参加�
 | `make submit` | 検証済み CSV を Kaggle に提出して採点を待つ |
 | `make pipeline` | 公開解答の探索、復元、合成、検証、提出 |
 
-GitHub Actions は毎日 08:00（日本時間）に `make refresh` を実行します。前回の合成 CSV と取得元の一覧を成果物から読み込み、GitHub の候補があれば Codex が復元手順を報告します。ワークフローは `KAGGLE_API_TOKEN` と `OPENAI_API_KEY` を参照します。
+GitHub Actions は毎日 08:00（日本時間）に公開解答を探索し、固定版を復元して合成した CSV を全問検証し、Kaggle に一度提出します。前回の合成 CSV と取得元の一覧を成果物から読み込み、今回の命令数と改善幅も保存します。GitHub の候補があれば Codex が復元手順を JSON で報告し、確認済みの復元手順は後続の実行で利用できます。ワークフローは `KAGGLE_API_TOKEN` と `OPENAI_API_KEY` を参照します。
 
 ## 取得元
 

@@ -111,6 +111,12 @@ def sync():
         total = save_verified(destination, puzzles, best)
         scratch.write_text(json.dumps(hashes, indent=2) + "\n")
         os.replace(scratch, state)
+        scratch.write_text(json.dumps({
+            "previous_instructions": original_score,
+            "instructions": total,
+            "instructions_saved": original_score - total,
+        }, indent=2) + "\n")
+        os.replace(scratch, OUTPUT / "scores.json")
     print(f"{destination}: {original_score} -> {total} instructions", flush=True)
     return bool(failures)
 

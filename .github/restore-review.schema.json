@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_url": {"type": "string"},
+          "commit_sha": {"type": "string"},
+          "commands": {"type": "array", "items": {"type": "string"}},
+          "inputs_and_versions": {"type": "array", "items": {"type": "string"}},
+          "output_csv": {"type": ["string", "null"]},
+          "expected_sha256": {"type": ["string", "null"]},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "missing_information": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["source_url", "commit_sha", "commands", "inputs_and_versions", "output_csv", "expected_sha256", "evidence", "missing_information"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["candidates"],
+  "additionalProperties": false
+}
