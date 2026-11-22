@@ -89,12 +89,17 @@ jobs:
         if: steps.credentials.outputs.available == 'true'
         run: npm install --global @openai/codex@0.171.0-alpha.13
       - name: Inspect restoration steps with Codex
+        id: review
         if: steps.credentials.outputs.available == 'true'
+        continue-on-error: true
         env:
           CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: make review-restore
+      - name: Report an unavailable Codex review
+        if: steps.review.outcome == 'failure'
+        run: echo '::warning::Codex review failed. The verified portfolio will still be submitted.'
       - name: Save the Codex report
-        if: steps.credentials.outputs.available == 'true'
+        if: steps.review.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: santa-restore-review
