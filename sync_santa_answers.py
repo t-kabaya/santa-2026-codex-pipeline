@@ -60,23 +60,67 @@ def download_notebook(notebook, directory):
                     "--file-pattern", r".*\.[cC][sS][vV]$", "-q")
 
 
-def download(name, ref, directory, notebooks):
+def read_valid_csv(raw, puzzles, scratch):
+    first_line = raw[:4096].splitlines()[:1]
+    if not first_line:
+        return None
+    try:
+        fields = next(csv.reader([first_line[0].decode("utf-8-sig")]), [])
+        if not {"id", "program"}.issubset(fields):
+            return None
+        scratch.write_bytes(raw)
+        programs = load_programs(scratch, reference=True)
+        score(puzzles, programs)
+        return programs
+    except (ValueError, TypeError, KeyError, csv.Error):
+        return None
+
+
+def merge_archive_csvs(archive, puzzles, scratch, preferred=None):
+    best = {}
+    filenames = []
+    entries = sorted(archive.infolist(), key=lambda entry: entry.filename != preferred)
+    for entry in entries:
+        if not entry.filename.lower().endswith(".csv"):
+            continue
+        raw = archive.read(entry)
+        programs = read_valid_csv(raw, puzzles, scratch)
+        if programs is None:
+            continue
+        filenames.append(entry.filename)
+        for puzzle_id, program in programs.items():
+            if puzzle_id not in best or len(program) < len(best[puzzle_id]):
+                best[puzzle_id] = program
+    if not filenames:
+        return None
+    total = save_verified(scratch, puzzles, best)
+    return filenames, total
+
+
+def download(name, ref, puzzles, scratch, notebooks):
     if "local" in ref:
         return ref["local"].read_bytes()
     if "notebook" in ref:
         notebook = ref["notebook"]
         if notebook not in notebooks:
-            path = Path(mkdtemp(prefix="notebook-", dir=directory))
+            path = Path(mkdtemp(prefix="notebook-", dir=scratch.parent))
             download_notebook(notebook, path)
             notebooks[notebook] = path
         try:
             return (notebooks[notebook] / ref["file"]).read_bytes()
         except FileNotFoundError:
+            print(f"{name}: absent from the latest notebook output", flush=True)
             return None
     archive_path = download_archive(name.replace("/", "--"), ref["dataset"])
     try:
         with ZipFile(archive_path) as archive:
-            return archive.read(ref["file"])
+            merged = merge_archive_csvs(archive, puzzles, scratch, preferred=ref["file"])
+            if merged is None:
+                print(f"{name}: no valid answer CSV was found", file=sys.stderr, flush=True)
+                return None
+            filenames, total = merged
+            print(f"{name}: merged {len(filenames)} verified CSV(s) ({total:,} instructions)", flush=True)
+            return scratch.read_bytes()
     except BadZipFile:
         archive_path.unlink(missing_ok=True)
         raise
@@ -106,9 +150,8 @@ def sync():
             if limited and "local" not in ref:
                 continue
             try:
-                raw = download(name, ref, directory, notebooks)
+                raw = download(name, ref, puzzles, scratch, notebooks)
                 if raw is None:
-                    print(f"{name}: absent from the latest notebook output", flush=True)
                     continue
                 digest = hashlib.sha256(raw).hexdigest()
                 if digest == hashes.get(name):

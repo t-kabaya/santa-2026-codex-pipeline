@@ -1,7 +1,6 @@
 """Find complete, valid Santa 2026 answer CSVs on Kaggle."""
 
 import argparse
-import csv
 import fcntl
 import hashlib
 import json
@@ -18,8 +17,8 @@ from zipfile import BadZipFile, ZipFile
 from discover_santa_discussion import OUTPUT as DISCUSSION_REPORT
 
 from sync_santa_answers import (
-    DISCOVERED, OUTPUT, ROOT, KaggleRateLimited, download_archive, download_notebook, load_puzzles,
-    load_programs, load_references, score,
+    DISCOVERED, OUTPUT, ROOT, KaggleRateLimited, download_archive, download_notebook,
+    load_puzzles, load_references, merge_archive_csvs, read_valid_csv,
 )
 
 
@@ -73,20 +72,6 @@ def discussion_references():
     return datasets, notebooks
 
 
-def validate_csv(raw, puzzles, scratch):
-    header = raw[:4096].splitlines()[0:1]
-    if not header:
-        return None
-    fields = next(csv.reader([header[0].decode("utf-8-sig", errors="replace")]))
-    if not {"id", "program"}.issubset(fields):
-        return None
-    scratch.write_bytes(raw)
-    try:
-        return score(puzzles, load_programs(scratch, reference=True))
-    except (ValueError, TypeError, KeyError, csv.Error):
-        return None
-
-
 def inspect_notebook(notebook, puzzles, scratch):
     with TemporaryDirectory(dir=scratch.parent) as directory:
         path = Path(directory)
@@ -96,41 +81,36 @@ def inspect_notebook(notebook, puzzles, scratch):
             if not file.is_file() or file.suffix.lower() != ".csv":
                 continue
             raw = file.read_bytes()
-            total = validate_csv(raw, puzzles, scratch)
-            if total is not None:
+            programs = read_valid_csv(raw, puzzles, scratch)
+            if programs is not None:
                 filename = file.relative_to(path).as_posix()
                 candidates[f"notebook:{notebook}:{filename}"] = {
                     "notebook": notebook,
                     "file": filename,
                     "sha256": hashlib.sha256(raw).hexdigest(),
-                    "instructions": total,
+                    "instructions": sum(map(len, programs.values())),
                 }
         return candidates
 
 
 def inspect_dataset(dataset, puzzles, scratch):
     archive_path = download_archive(dataset.replace("/", "--"), dataset)
-    best = None
     try:
         with ZipFile(archive_path) as archive:
-            for entry in archive.infolist():
-                if not entry.filename.lower().endswith(".csv"):
-                    continue
-                raw = archive.read(entry)
-                total = validate_csv(raw, puzzles, scratch)
-                if total is None:
-                    continue
-                if best is None or total < best["instructions"]:
-                    best = {
-                        "dataset": dataset,
-                        "file": entry.filename,
-                        "sha256": hashlib.sha256(raw).hexdigest(),
-                        "instructions": total,
-                    }
+            merged = merge_archive_csvs(archive, puzzles, scratch)
     except BadZipFile:
         archive_path.unlink(missing_ok=True)
         raise
-    return best
+    if merged is None:
+        return None
+    filenames, total = merged
+    return {
+        "dataset": dataset,
+        "file": filenames[0],
+        "files": filenames,
+        "sha256": hashlib.sha256(scratch.read_bytes()).hexdigest(),
+        "instructions": total,
+    }
 
 
 def discover(limit):
@@ -167,7 +147,7 @@ def discover(limit):
                 continue
             discovered[dataset] = candidate
             added += 1
-            print(f"{dataset}: {candidate['file']} ({candidate['instructions']} instructions)", flush=True)
+            print(f"{dataset}: {len(candidate['files'])} verified CSV(s) ({candidate['instructions']} instructions)", flush=True)
         changed = bool(added)
         for notebook in notebooks[:limit]:
             if limited:
