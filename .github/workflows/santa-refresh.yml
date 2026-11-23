@@ -94,6 +94,7 @@ jobs:
         continue-on-error: true
         env:
           CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CODEX_REVIEW_MODEL: gpt-5.5
         run: make review-restore
       - name: Report an unavailable Codex review
         if: steps.review.outcome == 'failure'

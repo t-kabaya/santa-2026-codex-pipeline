@@ -27,7 +27,7 @@ def main():
                     ["codex", "-a", "never", "--disable", "shell_tool", "--disable", "unified_exec",
                      "-c", 'web_search="disabled"', "exec", "--ignore-user-config",
                      "--sandbox", "read-only",
-                     "--model", os.environ.get("CODEX_REVIEW_MODEL", "gpt-5.5"),
+                     "--model", os.environ.get("CODEX_REVIEW_MODEL", "gpt-6.2-sol"),
                      "--output-schema", str(SCHEMA), "--output-last-message", str(report), "-"],
                     cwd=ROOT, input=prompt, text=True, check=True,
                 )
