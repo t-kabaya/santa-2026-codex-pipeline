@@ -29,6 +29,8 @@ gh workflow run santa-refresh.yml --repo "$repo" --ref main
 
 The runner installs the required CLI tools. Each successful run submits once and reports the Kaggle submission ID and score in the **submit** job log. Set `OPENAI_API_KEY` to enable the Codex review.
 
+Workflows are disabled by default on forks; enable them in the **Actions** tab to run the pipeline daily.
+
 ## About this repository
 
 The pipeline discovers public solutions on Kaggle and verifies every program against the official puzzles. It combines the shortest valid solution for each of the 1,000 puzzles with candidates from [configured sources](restore_sources.json), including [Hansen's portfolio](https://github.com/Hansen0223/Santa_2026) and [GoodPJW's notebook](https://www.kaggle.com/code/goodpjw2008/santa-2026-lns-cp-sat-recombine-lb-132-256). Codex reviews GitHub links from Kaggle Discussions and reports restoration instructions for review.
