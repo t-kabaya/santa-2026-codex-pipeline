@@ -17,7 +17,8 @@ from zipfile import BadZipFile, ZipFile
 from discover_santa_discussion import OUTPUT as DISCUSSION_REPORT
 
 from sync_santa_answers import (
-    DISCOVERED, OUTPUT, ROOT, KaggleRateLimited, download_archive, download_notebook,
+    DISCOVERED, OUTPUT, ROOT, KaggleRateLimited, KaggleSourceForbidden,
+    download_archive, download_notebook,
     load_puzzles, load_references, merge_archive_csvs, read_valid_csv,
 )
 
@@ -134,6 +135,9 @@ def discover(limit):
         for dataset in datasets[:limit]:
             try:
                 candidate = inspect_dataset(dataset, puzzles, scratch)
+            except KaggleSourceForbidden as error:
+                print(f"{dataset}: {error}; skipping source.", file=sys.stderr, flush=True)
+                continue
             except KaggleRateLimited as error:
                 print(f"{dataset}: {error}; using verified discovery results so far.", file=sys.stderr)
                 limited = True
@@ -154,6 +158,9 @@ def discover(limit):
                 break
             try:
                 candidates = inspect_notebook(notebook, puzzles, scratch)
+            except KaggleSourceForbidden as error:
+                print(f"{notebook}: {error}; skipping source.", file=sys.stderr, flush=True)
+                continue
             except KaggleRateLimited as error:
                 print(f"{notebook}: {error}; using verified discovery results so far.", file=sys.stderr)
                 break
