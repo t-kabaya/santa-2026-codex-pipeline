@@ -19,7 +19,7 @@ gh workflow enable santa-refresh.yml --repo "$repo"
 
 If GitHub prompts you to enable Actions on the fork, follow the prompt in its **Actions** tab.
 
-**Automatic runs.** Once Actions and the workflow are enabled on the fork, GitHub schedules a run every morning at **08:00 JST** using the default branch. GitHub may start a run later than scheduled.
+**Automatic runs.** Once Actions and the workflow are enabled on the fork, GitHub schedules a run daily at **01:00 UTC** using the default branch. GitHub may start a run later than scheduled.
 
 **Manual runs.** Run this command to start a submission immediately, or select **Actions → Santa daily submission → Run workflow** on GitHub.
 

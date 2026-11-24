@@ -2,8 +2,7 @@ name: Santa daily submission
 
 on:
   schedule:
-    - cron: '0 8 * * *'
-      timezone: Asia/Tokyo
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 permissions:
