@@ -3,23 +3,27 @@
 This pipeline runs daily on GitHub Actions and uses Codex to investigate how to reproduce public Kaggle Santa 2026 solutions.
 It verifies the collected solutions, keeps the shortest valid program for each puzzle, and submits the merged result to Kaggle.
 
-## Fork and run
+## Clone and run
 
 Have your `KAGGLE_API_TOKEN` and `OPENAI_API_KEY` ready to add as GitHub Actions secrets during setup.
 
 ```bash
 gh auth login
-gh repo fork t-kabaya/santa-2026-codex-pipeline --clone=false
-repo="$(gh api user --jq .login)/santa-2026-codex-pipeline"
+gh repo clone t-kabaya/santa-2026-codex-pipeline santa-private
+cd santa-private
+git remote rename origin upstream
+
+repo="$(gh api user --jq .login)/santa-2026-private"
+gh repo create "$repo" --private --source=. --remote=origin --push
 
 gh secret set KAGGLE_API_TOKEN --repo "$repo"
 gh secret set OPENAI_API_KEY --repo "$repo" # Optional Codex review
 gh workflow enable santa-refresh.yml --repo "$repo"
 ```
 
-If GitHub prompts you to enable Actions on the fork, follow the prompt in its **Actions** tab.
+This creates an independent private repository. If GitHub prompts you to enable Actions, follow the prompt in its **Actions** tab.
 
-**Automatic runs.** Once Actions and the workflow are enabled on the fork, GitHub schedules a run daily at **01:00 UTC** using the default branch. GitHub may start a run later than scheduled.
+**Automatic runs.** Once Actions and the workflow are enabled in your private repository, GitHub schedules a run daily at **01:00 UTC** using the default branch. GitHub may start a run later than scheduled.
 
 **Manual runs.** Run this command to start a submission immediately, or select **Actions → Santa daily submission → Run workflow** on GitHub.
 
