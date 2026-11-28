@@ -26,6 +26,10 @@ class KaggleSourceForbidden(Exception):
     pass
 
 
+class KaggleSourceNotFound(Exception):
+    pass
+
+
 def kaggle_download(*args):
     result = subprocess.run(["kaggle", *args], capture_output=True, text=True, timeout=300)
     output = result.stderr + result.stdout
@@ -33,6 +37,8 @@ def kaggle_download(*args):
         raise KaggleRateLimited("Kaggle download rate limit reached")
     if result.returncode and "403 Client Error" in output:
         raise KaggleSourceForbidden("Kaggle denied access to this source")
+    if result.returncode and "404 Client Error" in output:
+        raise KaggleSourceNotFound("Kaggle source or output was not found")
     if result.stdout:
         print(result.stdout, end="", flush=True)
     if result.stderr:
@@ -173,7 +179,7 @@ def sync():
                         improved += 1
                 hashes[name] = digest
                 print(f"{name}: verified, {improved} improvements", flush=True)
-            except KaggleSourceForbidden as error:
+            except (KaggleSourceForbidden, KaggleSourceNotFound) as error:
                 print(f"{name}: {error}; skipping source.", file=sys.stderr, flush=True)
             except KaggleRateLimited:
                 print(f"{name}: Kaggle rate limit reached; keeping the verified portfolio and checking local candidates.", file=sys.stderr, flush=True)
